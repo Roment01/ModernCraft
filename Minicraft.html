@@ -1,4 +1,51 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MiniCraft</title>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- PWA сервис-воркер -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker зарегистрирован'))
+        .catch(err => console.log('SW ошибка:', err));
+    }
+  </script>
+
+  <!-- CSS для landscape режима -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #87CEEB;
+    }
+
+    #game-container {
+      transform: rotate(90deg);
+      transform-origin: left top;
+      width: 100vh;
+      height: 100vw;
+    }
+  </style>
+
+</head>
+<body>
+  <div id="game-container">
+    <meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -201,5 +248,19 @@ setTimeout(() => {
 }, 1200);
 </script>
 
+</body>
+</html>
+  </div>
+
+  <script>
+    // Пример загрузки version.json и changelog.json
+    fetch('version.json')
+      .then(res => res.json())
+      .then(data => console.log('Версия игры:', data.version));
+
+    fetch('changelog.json')
+      .then(res => res.json())
+      .then(data => console.log('Changelog:', data.items));
+  </script>
 </body>
 </html>
