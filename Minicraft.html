@@ -1,0 +1,205 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiniCraft</title>
+
+<style>
+body {
+  margin: 0;
+  background: #87CEEB;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+#loading {
+  position: fixed;
+  inset: 0;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+#menu {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+#changelog {
+  margin-top: 5px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+canvas {
+  display: block;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">
+  <h2>MiniCraft</h2>
+  <p id="versionText">Загрузка...</p>
+</div>
+
+<div id="menu">
+  <div id="versionUI">Версия: --</div>
+  <div id="changelog">Что нового: --</div>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+// ======================
+// ЗАГРУЗКА ВЕРСИИ
+// ======================
+fetch("version.json")
+  .then(r => r.json())
+  .then(v => {
+    document.getElementById("versionText").innerText =
+      "Версия " + v.version + " | Build " + v.build;
+
+    document.getElementById("versionUI").innerText =
+      "Версия: " + v.version;
+  })
+  .catch(() => {
+    document.getElementById("versionText").innerText =
+      "Версия офлайн";
+  });
+
+// ======================
+// CHANGELOG
+// ======================
+fetch("changelog.json")
+  .then(r => r.json())
+  .then(c => {
+    const last = c.items[0];
+    document.getElementById("changelog").innerText =
+      "Что нового: " + last.text;
+  })
+  .catch(() => {
+    document.getElementById("changelog").innerText =
+      "Что нового: недоступно";
+  });
+
+// ======================
+// ИГРА
+// ======================
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const blockSize = 40;
+const cols = Math.floor(canvas.width / blockSize);
+const rows = Math.floor(canvas.height / blockSize);
+
+const world = [];
+for (let y = 0; y < rows; y++) {
+  world[y] = [];
+  for (let x = 0; x < cols; x++) {
+    world[y][x] = y > rows / 2 ? 1 : 0;
+  }
+}
+
+const player = {
+  x: 5,
+  y: 5,
+  vx: 0,
+  vy: 0,
+  onGround: false
+};
+
+const gravity = 0.5;
+const keys = {};
+
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+canvas.addEventListener("click", e => {
+  const x = Math.floor(e.clientX / blockSize);
+  const y = Math.floor(e.clientY / blockSize);
+  if (world[y]) world[y][x] = 1;
+});
+
+canvas.addEventListener("contextmenu", e => {
+  e.preventDefault();
+  const x = Math.floor(e.clientX / blockSize);
+  const y = Math.floor(e.clientY / blockSize);
+  if (world[y]) world[y][x] = 0;
+});
+
+function update() {
+  player.vx = 0;
+  if (keys["ArrowLeft"]) player.vx = -4;
+  if (keys["ArrowRight"]) player.vx = 4;
+  if (keys["ArrowUp"] && player.onGround) {
+    player.vy = -10;
+    player.onGround = false;
+  }
+
+  player.vy += gravity;
+  player.x += player.vx * 0.1;
+  player.y += player.vy * 0.1;
+
+  const bx = Math.floor(player.x);
+  const by = Math.floor(player.y + 1);
+
+  if (world[by] && world[by][bx]) {
+    player.vy = 0;
+    player.onGround = true;
+  }
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (world[y][x]) {
+        ctx.fillStyle = "#6b4f2a";
+        ctx.fillRect(
+          x * blockSize,
+          y * blockSize,
+          blockSize,
+          blockSize
+        );
+      }
+    }
+  }
+
+  ctx.fillStyle = "red";
+  ctx.fillRect(
+    player.x * blockSize,
+    player.y * blockSize,
+    blockSize,
+    blockSize
+  );
+}
+
+// Убираем загрузочный экран
+setTimeout(() => {
+  document.getElementById("loading").style.display = "none";
+  update();
+}, 1200);
+</script>
+
+</body>
+</html>
