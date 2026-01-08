@@ -2,265 +2,236 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <!-- ОДИН корректный viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>MiniCraft</title>
-
-  <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json">
+  <!-- Цвет темы для PWA -->
+  <meta name="theme-color" content="#87CEEB">
 
-  <!-- PWA сервис-воркер -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log('Service Worker зарегистрирован'))
-        .catch(err => console.log('SW ошибка:', err));
-    }
-  </script>
-
-  <!-- CSS для landscape режима -->
   <style>
-    html, body {
+    body {
       margin: 0;
       padding: 0;
       overflow: hidden;
+      background: #87CEEB;
+      font-family: Arial, sans-serif;
+      /* Запрет на выделение текста для мобильных */
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #loading {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #222;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #menu {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 100;
+    }
+
+    #changelog {
+      margin-top: 5px;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    canvas {
+      display: block;
+      /* Игра сама растянется на весь экран */
       width: 100vw;
       height: 100vh;
     }
-
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #87CEEB;
-    }
-
-    #game-container {
-      transform: rotate(90deg);
-      transform-origin: left top;
-      width: 100vh;
-      height: 100vw;
-    }
   </style>
-
 </head>
 <body>
-  <div id="game-container">
-    <meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MiniCraft</title>
-
-<style>
-body {
-  margin: 0;
-  background: #87CEEB;
-  font-family: Arial, sans-serif;
-  overflow: hidden;
-}
-
-#loading {
-  position: fixed;
-  inset: 0;
-  background: #222;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-
-#menu {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-#changelog {
-  margin-top: 5px;
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-canvas {
-  display: block;
-}
-</style>
-</head>
-
-<body>
-
-<div id="loading">
-  <h2>MiniCraft</h2>
-  <p id="versionText">Загрузка...</p>
-</div>
-
-<div id="menu">
-  <div id="versionUI">Версия: --</div>
-  <div id="changelog">Что нового: --</div>
-</div>
-
-<canvas id="game"></canvas>
-
-<script>
-// ======================
-// ЗАГРУЗКА ВЕРСИИ
-// ======================
-fetch("version.json")
-  .then(r => r.json())
-  .then(v => {
-    document.getElementById("versionText").innerText =
-      "Версия " + v.version + " | Build " + v.build;
-
-    document.getElementById("versionUI").innerText =
-      "Версия: " + v.version;
-  })
-  .catch(() => {
-    document.getElementById("versionText").innerText =
-      "Версия офлайн";
-  });
-
-// ======================
-// CHANGELOG
-// ======================
-fetch("changelog.json")
-  .then(r => r.json())
-  .then(c => {
-    const last = c.items[0];
-    document.getElementById("changelog").innerText =
-      "Что нового: " + last.text;
-  })
-  .catch(() => {
-    document.getElementById("changelog").innerText =
-      "Что нового: недоступно";
-  });
-
-// ======================
-// ИГРА
-// ======================
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-const blockSize = 40;
-const cols = Math.floor(canvas.width / blockSize);
-const rows = Math.floor(canvas.height / blockSize);
-
-const world = [];
-for (let y = 0; y < rows; y++) {
-  world[y] = [];
-  for (let x = 0; x < cols; x++) {
-    world[y][x] = y > rows / 2 ? 1 : 0;
-  }
-}
-
-const player = {
-  x: 5,
-  y: 5,
-  vx: 0,
-  vy: 0,
-  onGround: false
-};
-
-const gravity = 0.5;
-const keys = {};
-
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-canvas.addEventListener("click", e => {
-  const x = Math.floor(e.clientX / blockSize);
-  const y = Math.floor(e.clientY / blockSize);
-  if (world[y]) world[y][x] = 1;
-});
-
-canvas.addEventListener("contextmenu", e => {
-  e.preventDefault();
-  const x = Math.floor(e.clientX / blockSize);
-  const y = Math.floor(e.clientY / blockSize);
-  if (world[y]) world[y][x] = 0;
-});
-
-function update() {
-  player.vx = 0;
-  if (keys["ArrowLeft"]) player.vx = -4;
-  if (keys["ArrowRight"]) player.vx = 4;
-  if (keys["ArrowUp"] && player.onGround) {
-    player.vy = -10;
-    player.onGround = false;
-  }
-
-  player.vy += gravity;
-  player.x += player.vx * 0.1;
-  player.y += player.vy * 0.1;
-
-  const bx = Math.floor(player.x);
-  const by = Math.floor(player.y + 1);
-
-  if (world[by] && world[by][bx]) {
-    player.vy = 0;
-    player.onGround = true;
-  }
-
-  draw();
-  requestAnimationFrame(update);
-}
-
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      if (world[y][x]) {
-        ctx.fillStyle = "#6b4f2a";
-        ctx.fillRect(
-          x * blockSize,
-          y * blockSize,
-          blockSize,
-          blockSize
-        );
-      }
-    }
-  }
-
-  ctx.fillStyle = "red";
-  ctx.fillRect(
-    player.x * blockSize,
-    player.y * blockSize,
-    blockSize,
-    blockSize
-  );
-}
-
-// Убираем загрузочный экран
-setTimeout(() => {
-  document.getElementById("loading").style.display = "none";
-  update();
-}, 1200);
-</script>
-
-</body>
-</html>
+  <!-- Загрузочный экран -->
+  <div id="loading">
+    <h2>MiniCraft</h2>
+    <p id="versionText">Загрузка...</p>
   </div>
 
-  <script>
-    // Пример загрузки version.json и changelog.json
-    fetch('version.json')
-      .then(res => res.json())
-      .then(data => console.log('Версия игры:', data.version));
+  <!-- Меню с версией -->
+  <div id="menu">
+    <div id="versionUI">Версия: --</div>
+    <div id="changelog">Что нового: --</div>
+  </div>
 
-    fetch('changelog.json')
-      .then(res => res.json())
-      .then(data => console.log('Changelog:', data.items));
+  <!-- Канвас для игры -->
+  <canvas id="game"></canvas>
+
+  <script>
+    // ====================== ИНИЦИАЛИЗАЦИЯ ======================
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    // Устанавливаем размеры канваса вручную
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); // Первоначальный вызов
+
+    // ====================== ЗАГРУЗКА ДАННЫХ ======================
+    // Функция для безопасной загрузки JSON (работает офлайн)
+    function loadJSON(url, fallback) {
+      return fetch(url)
+        .then(r => r.ok ? r.json() : fallback)
+        .catch(() => fallback);
+    }
+
+    // Загружаем версию и changelog параллельно
+    Promise.all([
+      loadJSON('version.json', {version: 'офлайн', build: '0'}),
+      loadJSON('changelog.json', {items: [{text: 'офлайн-режим'}]})
+    ]).then(([versionData, changelogData]) => {
+      // Обновляем интерфейс
+      document.getElementById('versionText').textContent = 
+        `Версия ${versionData.version} | Build ${versionData.build}`;
+      document.getElementById('versionUI').textContent = 
+        `Версия: ${versionData.version}`;
+      document.getElementById('changelog').textContent = 
+        `Что нового: ${changelogData.items[0].text}`;
+    });
+
+    // ====================== ИГРОВАЯ ЛОГИКА ======================
+    const blockSize = 40;
+    const cols = Math.floor(canvas.width / blockSize);
+    const rows = Math.floor(canvas.height / blockSize);
+
+    // Создаём мир
+    const world = [];
+    for (let y = 0; y < rows; y++) {
+      world[y] = [];
+      for (let x = 0; x < cols; x++) {
+        // Нижняя половина - земля
+        world[y][x] = y > rows / 2 ? 1 : 0;
+      }
+    }
+
+    const player = {
+      x: 5,
+      y: 5,
+      vx: 0,
+      vy: 0,
+      onGround: false
+    };
+
+    const gravity = 0.5;
+    const keys = {};
+
+    // Управление
+    document.addEventListener('keydown', e => keys[e.key] = true);
+    document.addEventListener('keyup', e => keys[e.key] = false);
+
+    // Клики для строительства/разрушения
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / blockSize);
+      const y = Math.floor((e.clientY - rect.top) / blockSize);
+      if (world[y] && world[y][x] !== undefined) world[y][x] = 1;
+    });
+
+    canvas.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / blockSize);
+      const y = Math.floor((e.clientY - rect.top) / blockSize);
+      if (world[y] && world[y][x] !== undefined) world[y][x] = 0;
+    });
+
+    // Игровой цикл
+    function update() {
+      // Движение
+      player.vx = 0;
+      if (keys['ArrowLeft']) player.vx = -4;
+      if (keys['ArrowRight']) player.vx = 4;
+      if (keys['ArrowUp'] && player.onGround) {
+        player.vy = -10;
+        player.onGround = false;
+      }
+
+      player.vy += gravity;
+      player.x += player.vx * 0.1;
+      player.y += player.vy * 0.1;
+
+      // Простая коллизия с землёй
+      const bx = Math.floor(player.x);
+      const by = Math.floor(player.y + 1);
+
+      if (world[by] && world[by][bx]) {
+        player.vy = 0;
+        player.onGround = true;
+      }
+
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    function draw() {
+      // Очищаем канвас
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Рисуем блоки мира
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          if (world[y][x]) {
+            ctx.fillStyle = '#6b4f2a';
+            ctx.fillRect(
+              x * blockSize,
+              y * blockSize,
+              blockSize,
+              blockSize
+            );
+          }
+        }
+      }
+
+      // Рисуем игрока
+      ctx.fillStyle = 'red';
+      ctx.fillRect(
+        player.x * blockSize,
+        player.y * blockSize,
+        blockSize,
+        blockSize
+      );
+    }
+
+    // ====================== ЗАПУСК ИГРЫ ======================
+    // Прячем загрузочный экран и запускаем игру
+    setTimeout(() => {
+      document.getElementById('loading').style.display = 'none';
+      update();
+    }, 1200);
+
+    // ====================== PWA: РЕГИСТРАЦИЯ SERVICE WORKER ======================
+    // Регистрируем ПОСЛЕ загрузки страницы
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('✅ Service Worker зарегистрирован:', reg.scope))
+          .catch(err => console.error('❌ Ошибка SW:', err));
+      });
+    }
   </script>
 </body>
 </html>
