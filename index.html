@@ -114,6 +114,41 @@
     .btn:active {
       background: rgba(255, 255, 255, 0.6);
     }
+
+    /* Плашка установки PWA */
+    #pwaInstallBanner {
+      position: fixed;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34, 34, 34, 0.95);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      z-index: 500;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #pwaInstallBanner button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #pwaInstallBanner .close-btn {
+      background: transparent;
+      color: #aaa;
+      font-size: 16px;
+      padding: 4px;
+    }
   </style>
 </head>
 <body>
@@ -128,6 +163,13 @@
     <div id="versionUI">Версия игры: --</div>
     <div id="changelog">Что нового: --</div>
     <button id="resetBtn">Сбросить мир</button>
+  </div>
+
+  <!-- Баннер установки PWA -->
+  <div id="pwaInstallBanner">
+    <span>Установить ModernCraft как приложение?</span>
+    <button id="pwaInstallBtn">Установить</button>
+    <button class="close-btn" id="pwaCloseBtn">✕</button>
   </div>
 
   <!-- Экранное управление -->
@@ -182,13 +224,11 @@
       cols = Math.ceil(canvas.width / blockSize);
       rows = Math.ceil(canvas.height / blockSize);
 
-      // Пробуем восстановить сохранённый мир
       const savedWorld = loadWorld();
 
       if (savedWorld && savedWorld.length > 0) {
         world = savedWorld;
       } else {
-        // Генерация базового мира (если нет сохранения)
         world = [];
         for (let y = 0; y < rows; y++) {
           world[y] = [];
@@ -200,7 +240,7 @@
       }
     }
 
-    // Сброс сохранения и генерация заново
+    // Сброс сохранения
     document.getElementById('resetBtn').addEventListener('click', () => {
       if (confirm('Вы уверены, что хотите сбросить сохраненный мир?')) {
         localStorage.removeItem(SAVE_KEY);
@@ -219,7 +259,7 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Безопасная загрузка конфигов
+    // Загрузка конфигов
     function loadJSON(url, fallback) {
       return fetch(url)
         .then(r => r.ok ? r.json() : fallback)
@@ -227,15 +267,15 @@
     }
 
     Promise.all([
-      loadJSON('version.json', { version: '0.1.0', build: '1' }),
-      loadJSON('changelog.json', { items: [{ text: 'Добавлено сохранение мира в LocalStorage' }] })
+      loadJSON('version.json', { version: '0.2.0', build: '2' }),
+      loadJSON('changelog.json', { items: [{ text: 'Поддержка установки приложения (PWA)' }] })
     ]).then(([v, c]) => {
       document.getElementById('versionText').textContent = `Версия ${v.version} | Build ${v.build}`;
       document.getElementById('versionUI').textContent = `Версия игры: ${v.version}`;
       document.getElementById('changelog').textContent = `Что нового: ${c.items[0].text}`;
     });
 
-    // Объект игрока
+    // Игрок
     const player = {
       x: 3,
       y: 2,
@@ -249,11 +289,10 @@
     const gravity = 0.35;
     const keys = {};
 
-    // Управление с клавиатуры
     document.addEventListener('keydown', e => keys[e.code] = true);
     document.addEventListener('keyup', e => keys[e.code] = false);
 
-    // Мобильное управление (Touch)
+    // Сенсорное управление
     function bindTouch(elementId, code) {
       const btn = document.getElementById(elementId);
       btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[code] = true; });
@@ -272,7 +311,7 @@
       return world[by][bx] === 1;
     }
 
-    // Строительство и разрушение с автосохранением
+    // Строительство / разрушение
     canvas.addEventListener('click', e => interactWorld(e, 1));
     canvas.addEventListener('contextmenu', e => {
       e.preventDefault();
@@ -285,33 +324,28 @@
       const y = Math.floor((e.clientY - rect.top) / blockSize);
       if (world[y] && world[y][x] !== undefined) {
         world[y][x] = blockType;
-        saveWorld(); // Автосохранение при каждом изменении
+        saveWorld();
       }
     }
 
-    // Обновление состояния
+    // Игровой цикл
     function update() {
-      // Горизонтальное движение
       player.vx = 0;
       if (keys['ArrowLeft'] || keys['KeyA']) player.vx = -0.12;
       if (keys['ArrowRight'] || keys['KeyD']) player.vx = 0.12;
 
-      // Прыжок
       if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && player.onGround) {
         player.vy = -0.32;
         player.onGround = false;
       }
 
-      // Гравитация
       player.vy += gravity * 0.05;
 
-      // Коллизия по оси X
       player.x += player.vx;
       if (isSolid(player.x, player.y) || isSolid(player.x + player.width, player.y)) {
         player.x -= player.vx;
       }
 
-      // Коллизия по оси Y
       player.y += player.vy;
       if (isSolid(player.x, player.y + player.height) || isSolid(player.x + player.width, player.y + player.height)) {
         player.y = Math.floor(player.y + player.height) - player.height;
@@ -325,18 +359,15 @@
       requestAnimationFrame(update);
     }
 
-    // Отрисовка
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Отрисовка блоков
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           if (world[y] && world[y][x] === 1) {
             ctx.fillStyle = '#6b4f2a';
             ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
 
-            // Трава сверху блока
             if (y > 0 && world[y - 1] && world[y - 1][x] === 0) {
               ctx.fillStyle = '#4CAF50';
               ctx.fillRect(x * blockSize, y * blockSize, blockSize, 6);
@@ -345,7 +376,6 @@
         }
       }
 
-      // Отрисовка игрока
       ctx.fillStyle = '#E91E63';
       ctx.fillRect(
         player.x * blockSize,
@@ -355,7 +385,6 @@
       );
     }
 
-    // Запуск игры
     setTimeout(() => {
       const loader = document.getElementById('loading');
       loader.style.opacity = '0';
@@ -363,10 +392,39 @@
       update();
     }, 800);
 
-    // Регистрация Service Worker
+    // ====================== ЛОГИКА PWA УСТАНОВКИ ======================
+    let deferredPrompt;
+    const pwaBanner = document.getElementById('pwaInstallBanner');
+    const pwaBtn = document.getElementById('pwaInstallBtn');
+    const pwaCloseBtn = document.getElementById('pwaCloseBtn');
+
+    // Перехватываем событие предложения установки
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      // Показываем плашку предложения установки
+      pwaBanner.style.display = 'flex';
+    });
+
+    pwaBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      pwaBanner.style.display = 'none';
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`Результат установки: ${outcome}`);
+      deferredPrompt = null;
+    });
+
+    pwaCloseBtn.addEventListener('click', () => {
+      pwaBanner.style.display = 'none';
+    });
+
+    // Регистрация Service Worker с версией v=2 для обновления кэша
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js').catch(() => {});
+        navigator.serviceWorker.register('service-worker.js?v=2')
+          .then(reg => console.log('✅ Service Worker зарегистрирован'))
+          .catch(err => console.error('❌ Ошибка SW:', err));
       });
     }
   </script>
