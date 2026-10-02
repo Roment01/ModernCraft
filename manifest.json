@@ -1,0 +1,43 @@
+{
+  "name": "ModernCraft",
+  "short_name": "ModernCraft",
+  "start_url": "/ModernCraft/index.html",
+  "scope": "/ModernCraft/",
+  "display": "fullscreen",
+  "background_color": "#222222",
+  "theme_color": "#87CEEB",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192/87CEEB/ffffff.png?text=MC",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://via.placeholder.com/512/87CEEB/ffffff.png?text=MC",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "id": "1",
+  "lang": "ru",
+  "orientation": "any",
+  "display_override": [
+    "fullscreen",
+    "browser",
+    "window-controls-overlay",
+    "minimal-ui",
+    "standalone"
+  ],
+  "shortcuts": [
+    {
+      "name": "ModernCraft",
+      "url": null,
+      "description": null
+    }
+  ],
+  "categories": [
+    "games"
+  ]
+}
