@@ -1,8 +1,8 @@
 const CACHE_NAME = 'moderncraft-v2';
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
+  '/ModernCraft/',
+  '/ModernCraft/index.html',
+  '/ModernCraft/manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
